@@ -1,0 +1,11 @@
+# The virtual environment is big and can be recreated from requirements.txt
+.venv/
+
+# Python's automatic cache files
+__pycache__/
+
+# Notebook autosave folders
+.ipynb_checkpoints/
+
+# The raw dataset; the README will explain where to download it
+data/
