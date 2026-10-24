@@ -1,6 +1,9 @@
 # Load the pandas library and give it the short name "pd"
 import pandas as pd
 
+# The 9 sub-categories we chose to model on Day 1, kept in one place so every file uses the same list
+TOP_SUBCATEGORIES = ["Phones", "Chairs", "Storage", "Binders", "Accessories", "Appliances", "Furnishings", "Paper", "Tables"]
+
 
 # Define a function that loads and cleans the raw Superstore CSV
 def load_raw(path):
@@ -19,8 +22,9 @@ def load_raw(path):
     # Send the cleaned table back to whoever called the function
     return df
 
+
 # Define a function that builds the weekly sales table, one column per sub-category
-def make_weekly_table(df):
+def make_weekly_table(df, categories=TOP_SUBCATEGORIES):
     # Group sales by sub-category and by week, adding up the sales in each group
     weekly = df.groupby(["Sub-Category", pd.Grouper(key="Order Date", freq="W")])["Sales"].sum()
 
@@ -32,6 +36,11 @@ def make_weekly_table(df):
 
     # Make sure every week appears, and fill weeks with no sales with 0
     weekly = weekly.reindex(all_weeks).fillna(0)
+
+    # If a list of categories was given, keep only those columns, in that order
+    if categories is not None:
+        # Select the chosen columns; a misspelled name raises an error instead of silently disappearing
+        weekly = weekly[categories]
 
     # Send the weekly table back to whoever called the function
     return weekly
