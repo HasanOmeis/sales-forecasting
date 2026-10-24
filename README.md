@@ -19,7 +19,7 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is an upward trend over the four years.
 
 ## Project status
-Day 1 done (data preparation and EDA). Baselines, models, API, and Docker are coming.
+Days 1-2 done: data preparation and EDA, walk-forward validation, and baselines. Feature engineering, models, API, and Docker are coming.
 
 ## Validation and baselines
 
