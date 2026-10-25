@@ -19,7 +19,7 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is an upward trend over the four years.
 
 ## Project status
-Days 1-2 done: data preparation and EDA, walk-forward validation, and baselines. Feature engineering, models, API, and Docker are coming.
+Days 1-3 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, and LightGBM (global and per-category). Statistical models, error analysis, API, and Docker are coming.
 
 ## Validation and baselines
 
@@ -68,4 +68,10 @@ Each fold forecasts 8 weeks from the cutoff. The model predicts one week, writes
 
 - **One global model beats nine separate models.** Each series has only 169–201 training weeks, which is too little for a per-category model. The global model learns shared patterns (such as seasonality) from all nine series at once.
 - The global model has about 12% lower MAE than the best baseline and wins in 6 of 9 sub-categories. Its biggest win is Chairs (1,204 vs 1,602).
-- **Where it does not win:** Phones and Binders (near ties with the moving average and naive)
+- **Where it does not win:** Phones and Binders (near ties with the moving average and naive) and Tables (the moving average is better).
+- MASE is still slightly above 1, which shows how noisy weekly sub-category sales are.
+
+### Feature importance
+![Feature importance](results/feature_importance_global.png)
+
+The 8- and 12-week rolling means and the calendar features carry the most weight. `is_q4` gets no weight because `month` already contains the same information.
