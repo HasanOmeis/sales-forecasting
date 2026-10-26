@@ -1,0 +1,10 @@
+category,best_baseline,baseline_mae,lgbm_mae,sarima_mae,lgbm_gain_%,lgbm_wins
+Tables,moving_avg_4,1037.06,1066.83,,-2.9,False
+Binders,naive,1162.27,1181.67,1089.93,-1.7,False
+Phones,moving_avg_4,1275.08,1285.73,1287.16,-0.8,False
+Accessories,moving_avg_4,874.1,850.01,,2.8,True
+Paper,moving_avg_4,344.62,311.71,,9.5,True
+Storage,moving_avg_4,1165.9,978.8,988.02,16.0,True
+Appliances,seasonal_naive,660.67,529.89,,19.8,True
+Chairs,moving_avg_4,1602.08,1204.18,1320.21,24.8,True
+Furnishings,moving_avg_4,540.6,396.13,,26.7,True

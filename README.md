@@ -19,7 +19,7 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is an upward trend over the four years.
 
 ## Project status
-Days 1-3 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, and LightGBM (global and per-category). Statistical models, error analysis, API, and Docker are coming.
+Days 1-4 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, and error analysis. Experiment tracking, tuning, API, and Docker are coming.
 
 ## Validation and baselines
 
@@ -75,3 +75,32 @@ Each fold forecasts 8 weeks from the cutoff. The model predicts one week, writes
 ![Feature importance](results/feature_importance_global.png)
 
 The 8- and 12-week rolling means and the calendar features carry the most weight. `is_q4` gets no weight because `month` already contains the same information.
+
+## Statistical models and error analysis
+
+### SARIMA (`src/stat_models.py`)
+ARIMA(1,1,1) with Fourier terms (2 sin/cos pairs, period 52.18 weeks) as external regressors for the yearly cycle. A full seasonal SARIMA with period 52 is too slow and unstable with only 4 years of weekly data. It was fitted on the 4 largest, least sparse series: Phones, Chairs, Storage and Binders. Tables was replaced by Binders because it has 61 zero weeks.
+
+### Results on the same 4 sub-categories (same 5 walk-forward folds)
+
+| Model | MAE | RMSE | sMAPE | MASE |
+|---|---|---|---|---|
+| **lgbm_global** | **1163** | 1554 | **75.2** | **0.98** |
+| sarima | 1171 | **1531** | 75.4 | **0.98** |
+| lgbm_per_category | 1332 | 1742 | 86.0 | 1.11 |
+| moving_avg_4 | 1341 | 1644 | 81.9 | 1.12 |
+| naive | 1411 | 1785 | 81.6 | 1.15 |
+| seasonal_naive | 1530 | 2009 | 95.9 | 1.28 |
+
+SARIMA and the global LightGBM are tied, and both beat every baseline by about 13% on MAE.
+
+### Forecast vs. actual
+![Forecast vs actual](results/forecast_vs_actual.png)
+
+### Where the models fail
+- **Spikes:** 11% of test weeks are spikes (more than 2 std above the category average), but they cause 31% of all error. All 10 worst weeks are spikes. Single large orders cannot be predicted from past sales, and every model misses them.
+- **Q4:** error from September to December is about 1.5x the rest of the year.
+- **Sparse series:** Tables (61 zero weeks) has the worst sMAPE (97.7%), because a forecast against a zero week counts as 200% sMAPE.
+
+### Best model
+**Global LightGBM** is the best overall: MAE 867 vs 987 for the best baseline across all 9 sub-categories, and it wins in 6 of 9. It does **not** beat the best baseline on Tables (-3%), Binders (-2%, where SARIMA is best) or Phones (-1%). These are near ties. MASE is still above 1 for 8 of 9 categories, so weekly sub-category sales remain hard to forecast from past sales alone.
