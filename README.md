@@ -19,7 +19,7 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is an upward trend over the four years.
 
 ## Project status
-Days 1-4 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, and error analysis. Experiment tracking, tuning, API, and Docker are coming.
+Days 1-5 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, error analysis, MLflow experiment tracking, Optuna tuning, and a final saved model with a prediction script. API, tests, and Docker are coming.
 
 ## Validation and baselines
 
@@ -104,3 +104,25 @@ SARIMA and the global LightGBM are tied, and both beat every baseline by about 1
 
 ### Best model
 **Global LightGBM** is the best overall: MAE 867 vs 987 for the best baseline across all 9 sub-categories, and it wins in 6 of 9. It does **not** beat the best baseline on Tables (-3%), Binders (-2%, where SARIMA is best) or Phones (-1%). These are near ties. MASE is still above 1 for 8 of 9 categories, so weekly sub-category sales remain hard to forecast from past sales alone.
+
+## Experiment tracking and tuning (Day 5)
+
+- Every model (3 baselines, LightGBM global and per-category, SARIMA) is logged to **MLflow** with its parameters, metrics (overall and per sub-category), a per-category MAE plot, and the full per-fold results.
+- LightGBM was tuned with **Optuna** (40 trials, TPE sampler). To avoid tuning on the test weeks, Optuna only saw the weeks *before* the 5 test folds (3 folds x 8 weeks).
+- Tuning improved validation MASE from 1.028 to 0.960, but on the untouched test folds the gain was negligible:
+
+| Model | MAE | RMSE | sMAPE | MASE |
+|---|---|---|---|---|
+| LightGBM global (tuned) | 863 | 1133 | 76.3 | 1.06 |
+| LightGBM global (default) | 867 | 1133 | 75.9 | 1.07 |
+| Moving average (4 weeks) | 987 | 1206 | 82.9 | 1.23 |
+
+- Conclusion: the model is limited by its features, not its hyperparameters. The tuned settings are used for the final model.
+- Limitation: tree models can't extrapolate trends. Phones is where LightGBM is weakest (both the default and tuned versions lose to the 4-week moving average), and its 2019 forecast looks low compared with 2018's growth.
+
+## Final model
+
+- `python -m src.train` trains the global LightGBM on all 209 weeks and saves `models/lgbm_global.joblib` (model, features, categories, params and sales history).
+- `python -m src.predict Phones 8` forecasts one sub-category for 1 to 26 weeks ahead, week by week.
+
+To view the runs locally: `mlflow ui --backend-store-uri sqlite:///mlflow.db`

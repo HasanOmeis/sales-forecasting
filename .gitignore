@@ -9,3 +9,11 @@ __pycache__/
 
 # The raw dataset; the README will explain where to download it
 data/
+
+# MLflow run folders (params, metrics, plots); local only, not for GitHub
+mlruns/
+# MLflow's local database file (MLflow 3 can store runs here)
+mlflow.db
+# MLflow artifact folder some setups create
+mlartifacts/
+
