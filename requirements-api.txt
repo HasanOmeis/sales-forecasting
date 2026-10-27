@@ -1,0 +1,16 @@
+# data tables used by the features and forecast code
+pandas==3.1.0
+# array math used by the forecast code
+# pandas 3 uses pyarrow for text columns; needed to load the history table saved in the model
+pyarrow==25.0.1
+numpy==2.5.4
+# needed to load and run the saved LightGBM model
+lightgbm==4.7.0
+# LightGBM's scikit-learn interface needs this to load the model
+scikit-learn==1.9.1
+# loads the saved model bundle
+joblib==1.6.0
+# the web framework
+fastapi==0.162.0
+# the server that runs the API inside the container
+uvicorn==0.54.0

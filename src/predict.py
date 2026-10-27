@@ -4,8 +4,10 @@ from functools import lru_cache  # remembers a function's result so the model lo
 import joblib  # loads the saved model bundle
 
 from src.models import recursive_forecast  # Day 3 week-by-week forecasting function
-from src.train import MODEL_PATH  # where train_final() saved the model
+from pathlib import Path  # builds file paths that work on Windows and Linux (and inside Docker)
 
+ROOT = Path(__file__).resolve().parents[1]  # the project root: one folder up from src/
+MODEL_PATH = ROOT / "models" / "lgbm_global.joblib"  # same path train.py saves to, without importing train.py (and mlflow)
 MAX_HORIZON = 26  # longest forecast allowed (errors grow every week; we validated 8 weeks)
 
 

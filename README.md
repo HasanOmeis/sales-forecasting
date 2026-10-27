@@ -19,7 +19,7 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is an upward trend over the four years.
 
 ## Project status
-Days 1-5 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, error analysis, MLflow experiment tracking, Optuna tuning, and a final saved model with a prediction script. API, tests, and Docker are coming.
+Days 1-6 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, error analysis, MLflow tracking, Optuna tuning, a final saved model, a FastAPI service, pytest tests, a Docker image, and a Streamlit dashboard. Day 7 (final README polish and demo) is next.
 
 ## Validation and baselines
 
@@ -126,3 +126,52 @@ SARIMA and the global LightGBM are tied, and both beat every baseline by about 1
 - `python -m src.predict Phones 8` forecasts one sub-category for 1 to 26 weeks ahead, week by week.
 
 To view the runs locally: `mlflow ui --backend-store-uri sqlite:///mlflow.db`
+
+## API (Day 6)
+
+`src/api.py` is a FastAPI app that loads the saved model once and serves forecasts.
+
+| Endpoint | What it does |
+|---|---|
+| `GET /health` | Returns `{"status": "ok"}` |
+| `GET /categories` | Lists the 9 sub-categories the model can forecast |
+| `GET /forecast?sub_category=Phones&horizon=8` | Weekly forecast for 1 to 26 weeks ahead |
+
+Example response:
+
+```json
+{
+  "sub_category": "Phones",
+  "horizon": 2,
+  "forecast": [
+    {"week": "2019-01-06", "forecast": 450.3},
+    {"week": "2019-01-13", "forecast": 496.15}
+  ]
+}
+```
+
+An unknown sub-category returns `400`, and a horizon outside 1–26 returns `422`.
+
+Run locally: `uvicorn src.api:app --reload`, then open http://127.0.0.1:8000/docs
+
+## Tests
+
+`pytest -v` runs 27 tests:
+- **Data** (`tests/test_data.py`): the weekly table has 209 consecutive weeks with no gaps, duplicates, missing values or negative sales.
+- **Leakage** (`tests/test_features.py`): every lag equals sales exactly k weeks earlier, rolling features use only previous weeks, and replacing all future sales with 999,999 leaves every earlier feature unchanged.
+- **API** (`tests/test_api.py`): the forecast has exactly `horizon` consecutive weeks starting 2019-01-06, and bad inputs return the right error codes.
+
+## Docker
+
+The image contains only the API code, the saved model, and the libraries in `requirements-api.txt`.
+
+```bash
+docker build -t sales-forecast .
+docker run --rm -p 8000:8000 sales-forecast
+```
+
+Then open http://localhost:8000/docs
+
+## Dashboard
+
+`streamlit run dashboard.py` opens a page where you pick a sub-category and horizon and see the last two years of sales with the forecast.

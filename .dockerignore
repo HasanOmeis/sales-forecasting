@@ -1,0 +1,17 @@
+# the local virtual environment (Windows-only, and huge)
+.venv/
+# MLflow tracking data, not needed to serve forecasts
+mlruns/
+mlartifacts/
+mlflow.db
+# raw data and results, not needed: the model bundle already holds the history
+data/
+results/
+# notebooks and tests, not needed to run the API
+notebooks/
+tests/
+# Python cache files
+__pycache__/
+.pytest_cache/
+# git history
+.git/

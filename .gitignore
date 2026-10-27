@@ -17,3 +17,5 @@ mlflow.db
 # MLflow artifact folder some setups create
 mlartifacts/
 
+# pytest's cache folder, recreated on every test run
+.pytest_cache/
