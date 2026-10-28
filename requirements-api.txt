@@ -1,8 +1,8 @@
 # data tables used by the features and forecast code
 pandas==3.1.0
-# array math used by the forecast code
 # pandas 3 uses pyarrow for text columns; needed to load the history table saved in the model
 pyarrow==25.0.1
+# array math used by the forecast code
 numpy==2.5.4
 # needed to load and run the saved LightGBM model
 lightgbm==4.7.0
