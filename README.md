@@ -42,6 +42,20 @@ flowchart LR
     J --> L[dashboard.py<br/>Streamlit]
     K --> M[Docker container]
 ```
+## Demo
+
+**FastAPI `/forecast` endpoint** (Swagger UI at `/docs`)
+
+![API docs](docs/screenshots/api_docs.png)
+
+**Streamlit dashboard**: pick a sub-category and horizon to see actual sales and the forecast
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**MLflow**: every model logged with its walk-forward metrics
+
+![MLflow runs](docs/screenshots/mlflow.png)
+
 
 ## How to run
 
