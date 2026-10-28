@@ -7,8 +7,7 @@ __pycache__/
 # Notebook autosave folders
 .ipynb_checkpoints/
 
-# The raw dataset; the README will explain where to download it
-data/
+
 
 # MLflow run folders (params, metrics, plots); local only, not for GitHub
 mlruns/
