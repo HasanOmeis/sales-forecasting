@@ -4,7 +4,82 @@
 Forecast weekly sales for each product sub-category of a multi-category retail store, and build the solution as a reproducible ML pipeline.
 
 ## Dataset
-Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 2015 to December 2018. Only `Sales` is numeric (no discount, quantity, or profit). The data is not included in this repo: download `train.csv` from Kaggle and save it as `data/superstore.csv`.
+Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 2015 to December 2018. Only `Sales` is numeric (no discount, quantity, or profit). The CSV is included as `data/superstore.csv`, so a fresh clone runs without any download. Source: [Kaggle – Superstore Sales Dataset](https://www.kaggle.com/datasets/rohitsahoo/sales-forecasting).
+
+## Results at a glance
+
+Walk-forward validation: 5 folds x 8-week horizon, 9 sub-categories (last 40 of 209 weeks). Lower is better.
+
+| Model | MAE | RMSE | sMAPE | MASE |
+|---|---|---|---|---|
+| Naive (last week) | 1133 | 1385 | 91.1 | 1.45 |
+| Seasonal naive (same week last year) | 1127 | 1460 | 98.5 | 1.38 |
+| 4-week moving average (best baseline) | 987 | 1206 | 82.9 | 1.23 |
+| LightGBM per category | 986 | 1260 | 89.5 | 1.23 |
+| LightGBM global | 867 | 1133 | 75.9 | 1.07 |
+| **LightGBM global, tuned (final model)** | **863** | **1133** | **76.3** | **1.06** |
+
+SARIMA was fitted only on the 4 largest series (Phones, Chairs, Storage, Binders). There it ties LightGBM global (MASE 0.98 vs 0.98), and both beat the best baseline (1.12).
+
+![Model comparison](results/model_comparison.png)
+
+**Takeaway:** one global LightGBM model trained on all 9 series cuts MAE by about 13% against the best baseline. It still loses narrowly on Phones, Binders and Tables, and every model misses one-off spikes.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[data/superstore.csv] --> B[src/data.py<br/>clean + weekly table]
+    B --> C[src/features.py<br/>lags, rolling, calendar]
+    C --> D[src/validation.py<br/>walk-forward folds]
+    D --> E[baselines, LightGBM, SARIMA<br/>src/evaluate.py]
+    E --> F[MLflow<br/>runs + metrics]
+    E --> G[Optuna<br/>tuning]
+    G --> H[src/train.py<br/>final model]
+    H --> I[(models/lgbm_global.joblib)]
+    I --> J[src/predict.py<br/>recursive forecast]
+    J --> K[src/api.py<br/>FastAPI /forecast]
+    J --> L[dashboard.py<br/>Streamlit]
+    K --> M[Docker container]
+```
+
+## How to run
+
+### Local (Python 3.12)
+
+```bash
+# download the project from GitHub
+git clone https://github.com/HasanOmeis/sales-forecasting.git
+# move into the project folder
+cd sales-forecasting
+# create a virtual environment in the .venv folder
+python -m venv .venv
+# activate it on Windows (on Mac/Linux: source .venv/bin/activate)
+.venv\Scripts\activate
+# install all pinned libraries
+pip install -r requirements.txt
+# run the 27 tests (data gaps, leakage, API)
+pytest
+# print an 8-week forecast for Phones from the saved model
+python -m src.predict Phones 8
+# start the API, then open http://127.0.0.1:8000/docs
+uvicorn src.api:app
+# optional: open the Streamlit dashboard
+streamlit run dashboard.py
+# optional: retrain the final model on all data
+python -m src.train
+# optional: rebuild the README figures
+python -m src.make_figures
+```
+
+### Docker
+
+```bash
+# build the API image (only the API code, model and requirements-api.txt)
+docker build -t sales-forecast .
+# run it on port 8000, then open http://localhost:8000/docs
+docker run --rm -p 8000:8000 sales-forecast
+```
 
 ## Data preparation
 - Converted `Order Date` to a real date (day/month/year format).
@@ -18,8 +93,12 @@ Superstore Sales Dataset (Kaggle, by rohitsahoo): 9,800 order lines, January 201
 - There is a repeating yearly cycle.
 - There is an upward trend over the four years.
 
+![Weekly sales](results/weekly_sales.png)
+
+![Monthly seasonality](results/monthly_seasonality.png)
+
 ## Project status
-Days 1-6 done: data preparation and EDA, walk-forward validation, baselines, feature engineering, LightGBM (global and per-category), SARIMA, error analysis, MLflow tracking, Optuna tuning, a final saved model, a FastAPI service, pytest tests, a Docker image, and a Streamlit dashboard. Day 7 (final README polish and demo) is next.
+Complete. Data and EDA, walk-forward validation, baselines, LightGBM (global and per-category), SARIMA, error analysis, MLflow tracking, Optuna tuning, a final saved model, a FastAPI service, 27 pytest tests, a Docker image and a Streamlit dashboard.
 
 ## Validation and baselines
 
@@ -175,3 +254,19 @@ Then open http://localhost:8000/docs
 ## Dashboard
 
 `streamlit run dashboard.py` opens a page where you pick a sub-category and horizon and see the last two years of sales with the forecast.
+
+## Limitations
+
+- **No promotion or price data.** The dataset has only `Sales`, so discounts, promotions and holidays can't be modeled.
+- **Spikes are unpredictable.** 11% of test weeks are one-off large orders, and they cause 31% of all error. No model built on past sales can see them coming.
+- **Trees can't extrapolate trends.** LightGBM can't forecast above the levels it has seen, so it underestimates growing series like Phones.
+- **Short history.** 209 weeks gives only 4 yearly cycles, which limits seasonal models (a full SARIMA with period 52 was too unstable).
+- **Still hard to beat naive.** MASE is above 1 for 8 of 9 sub-categories, so weekly sub-category sales stay noisy even with the best model.
+- **Static model.** The model is trained until 2018-12-30 and is not retrained automatically.
+
+## Next steps
+
+- Add a trend component (detrend before LightGBM, or LightGBM with `linear_tree`) to fix trend extrapolation.
+- Try direct multi-horizon models instead of recursive forecasting, so errors don't build up week after week.
+- Add external data such as holidays and promotions.
+- Add a GitHub Actions workflow that runs `pytest` on every push.
