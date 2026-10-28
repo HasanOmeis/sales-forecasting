@@ -28,7 +28,7 @@ SARIMA was fitted only on the 4 largest series (Phones, Chairs, Storage, Binders
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[data/superstore.csv] --> B[src/data.py<br/>clean + weekly table]
     B --> C[src/features.py<br/>lags, rolling, calendar]
     C --> D[src/validation.py<br/>walk-forward folds]
